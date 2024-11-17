@@ -1,28 +1,12 @@
-var builder = WebApplication.CreateBuilder(args);
+using WebDiaryAPI;
 
-// Add services to the container.
+var builder = await CreateHostBuilder(args);
+await builder.Build().RunAsync();
+return;
 
-builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "v1");
-        options.RoutePrefix = string.Empty;
-    });
-}
-
-app.UseHttpsRedirection();
-
-app.UseAuthorization();
-
-app.MapControllers();
-
-app.Run();
+static async Task<IHostBuilder> CreateHostBuilder(string[] args) => 
+    await Task.Run(() => Host.CreateDefaultBuilder(args)
+        .ConfigureWebHostDefaults(webBuilder =>
+        {
+            webBuilder.UseStartup<Startup>();
+        }));
