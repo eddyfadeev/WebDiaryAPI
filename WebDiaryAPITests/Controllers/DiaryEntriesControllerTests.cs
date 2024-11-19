@@ -43,16 +43,16 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task GetDiaryEntriesAsync_ReturnsOkResult_WithEntries()
     {
-        var entries = new List<DiaryEntry>(_testEntries).AsReadOnly();
+        var expected = new List<DiaryEntry>(_testEntries).AsReadOnly();
 
         _mockRepository.Setup(repo => 
-            repo.GetAllEntriesAsync()).ReturnsAsync(entries);
+            repo.GetAllEntriesAsync()).ReturnsAsync(expected);
         
         var result = await _controller.GetDiaryEntriesAsync();
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
-        Assert.That(okResult?.Value, Is.EqualTo(entries));
+        Assert.That(okResult?.Value, Is.EqualTo(expected));
     }
 
     [Test]
@@ -73,16 +73,16 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task GetEntryByIdAsync_ReturnsOkResult_WithEntry()
     {
-        var entry = _testEntries[0];
+        var expected = _testEntries[0];
 
         _mockRepository.Setup(repo =>
-            repo.GetByIdAsync(1)).ReturnsAsync(entry);
+            repo.GetByIdAsync(1)).ReturnsAsync(expected);
 
         var result = await _controller.GetEntryById(1);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
-        Assert.That(okResult?.Value, Is.EqualTo(entry));
+        Assert.That(okResult?.Value, Is.EqualTo(expected));
     }
 
     [Test]
@@ -125,16 +125,16 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task CreateEntryAsync_ReturnsCreatedWithLocation()
     {
-        var testEntry = _testEntries[0];
+        var expected = _testEntries[0];
         
         _mockRepository.Setup(repo =>
-            repo.AddAsync(testEntry)).Returns(Task.CompletedTask);
+            repo.AddAsync(expected)).Returns(Task.CompletedTask);
 
-        var result = await _controller.CreateEntry(testEntry);
+        var result = await _controller.CreateEntry(expected);
         
         Assert.That(result, Is.InstanceOf<CreatedResult>());
         var createdResult = result as CreatedResult;
-        Assert.That(createdResult?.Value, Is.EqualTo(testEntry));
+        Assert.That(createdResult?.Value, Is.EqualTo(expected));
     }
 
     [Test]
@@ -214,7 +214,7 @@ public class DiaryEntriesControllerTests
     }
 
     [Test]
-    public async Task UpdateEntryAsync_RetunsBadRequest_WhenEntryIsNull()
+    public async Task UpdateEntryAsync_ReturnsBadRequest_WhenEntryIsNull()
     {
         _mockRepository.Setup(repo =>
             repo.UpdateAsync(null)).Returns(Task.CompletedTask);
