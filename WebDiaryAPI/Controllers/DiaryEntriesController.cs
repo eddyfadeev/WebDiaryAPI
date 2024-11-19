@@ -50,7 +50,7 @@ public class DiaryEntriesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateEntry([FromBody]DiaryEntry entry)
+    public async Task<IActionResult> CreateEntry([FromBody]DiaryEntry? entry)
     {
         try
         {
@@ -66,7 +66,7 @@ public class DiaryEntriesController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var uri = new Uri($"api/DiaryEntries/{entry.Id}", UriKind.Relative);
+        var uri = new Uri($"api/DiaryEntries/{entry?.Id}", UriKind.Relative);
 
         return Created(uri, entry);
     }
@@ -96,9 +96,9 @@ public class DiaryEntriesController : ControllerBase
     }
 
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> UpdateEntry(int id, [FromBody] DiaryEntry entry)
+    public async Task<IActionResult> UpdateEntry(int id, [FromBody] DiaryEntry? entry)
     {
-        if (id != entry.Id)
+        if (id != entry?.Id)
         {
             ModelState.AddModelError("id", "Id in the URL does not match Id in the body");
         }
@@ -116,8 +116,8 @@ public class DiaryEntriesController : ControllerBase
             {
                 return _repository.EntryExists(id) switch
                 {
-                    true => NotFound(),
-                    false => StatusCode(StatusCodes.Status500InternalServerError)
+                    true => StatusCode(StatusCodes.Status500InternalServerError),
+                    false => NotFound()
                 };
             }
         }
