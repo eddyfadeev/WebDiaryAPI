@@ -50,7 +50,7 @@ public class DiaryEntriesController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateEntry([FromBody]DiaryEntry? entry)
+    public async Task<IActionResult> CreateEntry([FromBody]DiaryEntry entry)
     {
         try
         {
@@ -66,9 +66,9 @@ public class DiaryEntriesController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        var resourseUrl = Url.Action(nameof(GetEntryById), new { id = entry?.Id });
+        var uri = new Uri($"api/DiaryEntries/{entry.Id}", UriKind.Relative);
 
-        return Created($"{resourseUrl}", entry);
+        return Created(uri, entry);
     }
 
     [HttpDelete("{id:int}")]
