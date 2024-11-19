@@ -19,23 +19,7 @@ public class DiaryEntriesControllerTests
     {
         _mockRepository = new Mock<IDiaryEntriesRepository>();
         _controller = new DiaryEntriesController(_mockRepository.Object);
-        _testEntries = 
-        [
-            new DiaryEntry
-            {
-                Id = 1, 
-                Title = "Great day!", 
-                Content = "The day was sunny", 
-                Created = DateTime.Now
-            },
-            new DiaryEntry
-            {
-                Id = 2,
-                Title = "Bad day!",
-                Content = "The day was rainy",
-                Created = DateTime.Now.AddDays(-1)
-            }
-        ];
+        _testEntries = GetTestEntries();
     }
 
     #region GetDiaryEntriesAsync Tests
@@ -73,12 +57,13 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task GetEntryByIdAsync_ReturnsOkResult_WithEntry()
     {
+        const int expectedId = 1;
         var expected = _testEntries[0];
 
         _mockRepository.Setup(repo =>
-            repo.GetByIdAsync(1)).ReturnsAsync(expected);
+            repo.GetByIdAsync(expectedId)).ReturnsAsync(expected);
 
-        var result = await _controller.GetEntryById(1);
+        var result = await _controller.GetEntryById(expectedId);
 
         Assert.That(result, Is.InstanceOf<OkObjectResult>());
         var okResult = result as OkObjectResult;
@@ -88,10 +73,12 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task GetEntryByIdAsync_ReturnsBadRequestResult_WithNegativeId()
     {
+        const int invalidId = -1;
+        
         _mockRepository.Setup(repo =>
-            repo.GetByIdAsync(-1)).Throws<ArgumentOutOfRangeException>();
+            repo.GetByIdAsync(invalidId)).Throws<ArgumentOutOfRangeException>();
 
-        var result = await _controller.GetEntryById(-1);
+        var result = await _controller.GetEntryById(invalidId);
 
         Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
@@ -99,10 +86,12 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task GetEntryByIdAsync_ReturnsBadRequestResult_WhenIdIsZero()
     {
+        const int invalidId = 0;
+        
         _mockRepository.Setup(repo =>
-            repo.GetByIdAsync(0)).Throws<ArgumentOutOfRangeException>();
+            repo.GetByIdAsync(invalidId)).Throws<ArgumentOutOfRangeException>();
 
-        var result = await _controller.GetEntryById(0);
+        var result = await _controller.GetEntryById(invalidId);
 
         Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
@@ -110,10 +99,12 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task GetEntryByIdAsync_ReturnsNotFoundResult()
     {
+        const int expectedId = 1;
+        
         _mockRepository.Setup(repo =>
             repo.GetByIdAsync(1)).ReturnsAsync((DiaryEntry?)default);
 
-        var result = await _controller.GetEntryById(1);
+        var result = await _controller.GetEntryById(expectedId);
 
         Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
     }
@@ -155,10 +146,12 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task DeleteEntryAsync_ReturnsNoContent_WhenSuccessfulDelete()
     {
+        const int expectedId = 1;
+        
         _mockRepository.Setup(repo =>
-            repo.DeleteByIdAsync(1)).Returns(Task.CompletedTask);
+            repo.DeleteByIdAsync(expectedId)).Returns(Task.CompletedTask);
 
-        var result = await _controller.DeleteEntry(1);
+        var result = await _controller.DeleteEntry(expectedId);
         
         Assert.That(result, Is.InstanceOf<NoContentResult>());
     }
@@ -166,10 +159,11 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task DeleteEntryAsync_ReturnsNotFound_WhenEntryDoesNotExist()
     {
+        const int expectedId = 1;
         _mockRepository.Setup(repo =>
-            repo.DeleteByIdAsync(1)).Throws<ArgumentNullException>();
+            repo.DeleteByIdAsync(expectedId)).Throws<ArgumentNullException>();
 
-        var result = await _controller.DeleteEntry(1);
+        var result = await _controller.DeleteEntry(expectedId);
         
         Assert.That(result, Is.InstanceOf<NotFoundObjectResult>());
     }
@@ -177,10 +171,12 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task DeleteEntryAsync_ReturnsBadRequest_WhenIdIsZero()
     {
-        _mockRepository.Setup(repo =>
-            repo.DeleteByIdAsync(0)).Throws<ArgumentOutOfRangeException>();
+        const int invalidId = 0;
         
-        var result = await _controller.DeleteEntry(0);
+        _mockRepository.Setup(repo =>
+            repo.DeleteByIdAsync(invalidId)).Throws<ArgumentOutOfRangeException>();
+        
+        var result = await _controller.DeleteEntry(invalidId);
         
         Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
@@ -188,10 +184,12 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task DeleteEntryAsync_ReturnsBadRequest_WithNegativeId()
     {
-        _mockRepository.Setup(repo =>
-            repo.DeleteByIdAsync(-1)).Throws<ArgumentOutOfRangeException>();
+        const int invalidId = -1;
         
-        var result = await _controller.DeleteEntry(-1);
+        _mockRepository.Setup(repo =>
+            repo.DeleteByIdAsync(invalidId)).Throws<ArgumentOutOfRangeException>();
+        
+        var result = await _controller.DeleteEntry(invalidId);
         
         Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
@@ -227,10 +225,10 @@ public class DiaryEntriesControllerTests
     [Test]
     public async Task UpdateEntryAsync_ReturnsBadRequest_WhenIdMismatch()
     {
+        const int invalidId = 2;
         var entryToUpdate = _testEntries[0];
-        var wrongId = 2;
         
-        var result = await _controller.UpdateEntry(wrongId, entryToUpdate);
+        var result = await _controller.UpdateEntry(invalidId, entryToUpdate);
 
         Assert.That(result, Is.InstanceOf<BadRequestObjectResult>());
     }
@@ -268,4 +266,22 @@ public class DiaryEntriesControllerTests
     }
 
     #endregion
+
+    private static List<DiaryEntry> GetTestEntries() =>
+    [
+        new ()
+        {
+            Id = 1,
+            Title = "Great day!",
+            Content = "The day was sunny",
+            Created = DateTime.Now
+        },
+        new ()
+        {
+            Id = 2,
+            Title = "Bad day!",
+            Content = "The day was rainy",
+            Created = DateTime.Now.AddDays(-1)
+        }
+    ];
 }
