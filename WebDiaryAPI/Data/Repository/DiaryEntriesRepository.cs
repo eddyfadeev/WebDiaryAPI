@@ -3,9 +3,10 @@ using WebDiaryAPI.Models;
 
 namespace WebDiaryAPI.Data.Repository;
 
-public class DiaryEntriesRepository : IDiaryEntriesRepository
+public class DiaryEntriesRepository : IDiaryEntriesRepository, IDisposable, IAsyncDisposable
 {
     private readonly ApplicationDbContext _context;
+    private bool _disposed = false;
     
     public DiaryEntriesRepository(ApplicationDbContext context) => 
         _context = context;
@@ -27,12 +28,7 @@ public class DiaryEntriesRepository : IDiaryEntriesRepository
     {
         ArgumentNullException.ThrowIfNull(entry);
 
-        if (entry.Id != 0)
-        {
-#pragma warning disable
-            throw new ArgumentOutOfRangeException(nameof(entry.Id), "Id must be zero or not be set when adding a new entry.");
-#pragma warning restore
-        }
+        entry.Id = 0;
         
         await _context.DiaryEntries.AddAsync(entry);
         await _context.SaveChangesAsync();
@@ -42,15 +38,7 @@ public class DiaryEntriesRepository : IDiaryEntriesRepository
     {
         ArgumentNullException.ThrowIfNull(entry);
 
-        _context.DiaryEntries.Update(entry);
-        await _context.SaveChangesAsync();
-    }
-
-    public async Task DeleteAsync(DiaryEntry? entry)
-    {
-        ArgumentNullException.ThrowIfNull(entry);
-
-        _context.DiaryEntries.Remove(entry);
+        _context.Entry(entry).State = EntityState.Modified;
         await _context.SaveChangesAsync();
     }
 
@@ -61,9 +49,44 @@ public class DiaryEntriesRepository : IDiaryEntriesRepository
             throw new ArgumentOutOfRangeException(nameof(id), "Id must be greater than zero.");
         }
         
-        var entryToDelete = await _context.DiaryEntries.FirstOrDefaultAsync(de => de.Id == id);
+        var entryToDelete = await _context.DiaryEntries.FindAsync(id);
         ArgumentNullException.ThrowIfNull(entryToDelete);
         
-        await DeleteAsync(entryToDelete);
+        _context.Entry(entryToDelete).State = EntityState.Deleted;
+        await _context.SaveChangesAsync();
+    }
+    
+    public bool EntryExists(int id) => 
+        _context.DiaryEntries.Any(e => e.Id == id);
+
+    protected virtual void Dispose(bool disposing)
+    {
+        if (!_disposed)
+        {
+            if (disposing)
+            {
+                _context.Dispose();
+            }
+
+            _disposed = true;
+        }
+        
+    }
+
+    public void Dispose()
+    {
+        Dispose(true);
+        GC.SuppressFinalize(this);
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!_disposed)
+        {
+            await _context.DisposeAsync().ConfigureAwait(false);
+            
+            _disposed = true;
+        }
+        GC.SuppressFinalize(this);
     }
 }

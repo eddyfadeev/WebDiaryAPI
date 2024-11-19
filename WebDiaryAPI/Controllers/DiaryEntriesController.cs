@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 using WebDiaryAPI.Data.Repository;
 using WebDiaryAPI.Models;
 
@@ -13,7 +14,7 @@ public class DiaryEntriesController : ControllerBase
     public DiaryEntriesController(IDiaryEntriesRepository repository) =>
         _repository = repository;
 
-    [HttpGet]
+    [HttpGet("all")]
     public async Task<IActionResult> GetDiaryEntriesAsync()
     { 
         var result = await _repository.GetAllEntriesAsync();
@@ -26,8 +27,7 @@ public class DiaryEntriesController : ControllerBase
         return Ok(result);
     }
 
-    [HttpGet]
-    [Route("{id:int?}")]
+    [HttpGet("{id:int}")]
     public async Task<IActionResult> GetEntryById([FromRoute]int id)
     {
         DiaryEntry? entry = default;
@@ -60,21 +60,18 @@ public class DiaryEntriesController : ControllerBase
         {
             ModelState.AddModelError("entry", "Entry cannot be null");
         }
-        catch (ArgumentOutOfRangeException ex)
-        {
-            ModelState.AddModelError("entry", ex.Message);
-        }
         
         if (!ModelState.IsValid)
         {
             return BadRequest(ModelState);
         }
 
-        return Ok(entry);
+        var resourseUrl = Url.Action(nameof(GetEntryById), new { id = entry?.Id });
+
+        return Created($"{resourseUrl}", entry);
     }
 
-    [HttpDelete]
-    [Route("{id:int}")]
+    [HttpDelete("{id:int}")]
     public async Task<IActionResult> DeleteEntry([FromRoute] int id)
     {
         try
@@ -95,19 +92,34 @@ public class DiaryEntriesController : ControllerBase
             return BadRequest(ModelState);
         }
 
-        return Ok();
+        return NoContent();
     }
 
-    [HttpPut]
-    public async Task<IActionResult> UpdateEntry([FromBody] DiaryEntry entry)
+    [HttpPut("{id:int}")]
+    public async Task<IActionResult> UpdateEntry(int id, [FromBody] DiaryEntry entry)
     {
-        try
+        if (id != entry.Id)
         {
-            await _repository.UpdateAsync(entry);
+            ModelState.AddModelError("id", "Id in the URL does not match Id in the body");
         }
-        catch (ArgumentNullException ex)
+        else
         {
-            ModelState.AddModelError("entry", ex.Message);
+            try
+            {
+                await _repository.UpdateAsync(entry);
+            }
+            catch (ArgumentNullException ex)
+            {
+                ModelState.AddModelError("entry", ex.Message);
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return _repository.EntryExists(id) switch
+                {
+                    true => NotFound(),
+                    false => StatusCode(StatusCodes.Status500InternalServerError)
+                };
+            }
         }
 
         if (!ModelState.IsValid)
@@ -115,6 +127,6 @@ public class DiaryEntriesController : ControllerBase
             return BadRequest(ModelState);
         }
         
-        return Ok(entry);
+        return NoContent();
     }
 }
